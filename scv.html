@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<!-- 
+═══════════════════════════════════════════════════════════════
+  SCV (Speculative Creation Visible)
+  言葉の輪廻転生（サムラン / Samsara of Language）を可視化するツール
+  
+  © 2026 のん（だれかのん）
+  
+  このツールは、文章の成り立ちを3つの視点から分析し、
+  「言葉が巡る中で形を変える」姿を三角図で表現します。
+  
+  改変せず、そのままの形でお使いください。
+═══════════════════════════════════════════════════════════════
+-->
+
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCV 三角図 - 思想提示の文章</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+body {
+  font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.container {
+  max-width: 500px;
+  width: 100%;
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.step {
+  margin-bottom: 25px;
+}
+
+.step-title {
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: bold;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.input-section textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.3s;
+  margin-bottom: 10px;
+}
+
+.input-section textarea:focus {
+  outline: none;
+  border-color: #9b59b6;
+}
+
+.button {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(155, 89, 182, 0.4);
+}
+
+.button:active {
+  transform: translateY(0);
+}
+
+.button.secondary {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.copy-success {
+  text-align: center;
+  color: #27ae60;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  display: none;
+}
+
+.copy-success.show {
+  display: block;
+}
+
+.instruction {
+  background: #ecf0f1;
+  padding: 15px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.json-input {
+  width: 100%;
+  min-height: 250px;
+  padding: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-family: 'Courier New', monospace;
+  resize: vertical;
+  transition: border-color 0.3s;
+  margin-bottom: 10px;
+}
+
+.json-input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+svg {
+  width: 100%;
+  max-width: 400px;
+  display: block;
+  margin: 0 auto 30px;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legend-color {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.legend-text {
+  flex: 1;
+  font-size: 0.95rem;
+  color: #34495e;
+}
+
+.legend-percent {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.note {
+  margin-top: 30px;
+  padding: 20px;
+  background: #ecf0f1;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: #555;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+@keyframes breathe {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% { 
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.breathing-dot {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+.result-section {
+  display: none;
+}
+
+.result-section.active {
+  display: block;
+}
+
+.error-message {
+  background: #e74c3c;
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 10px;
+  display: none;
+}
+
+.error-message.show {
+  display: block;
+}
+
+.perspective-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.perspective-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.perspective-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>言葉の循環を可視化する</h1>
+    <p class="subtitle">SCV(Speculative Creation Visible)</p>
+
+    <!-- ステップ1: 文章入力 -->
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">1</span>
+        <span>分析したい文章を入力</span>
+      </div>
+      <textarea id="textInput" placeholder="ここに文章を貼り付けてください..."></textarea>
+    </div>
+
+    <!-- ステップ2: プロンプトコピー -->
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">2</span>
+        <span>分析プロンプトをコピー</span>
+      </div>
+      <div class="instruction">
+        下のボタンを押すと、AI分析用のプロンプトが表示されます。<br>
+        普段利用するAI（Claude、ChatGPT、Geminiなど）にそのまま貼り付けてください。
+      </div>
+      <button class="button" onclick="showPrompt()">📋 プロンプトを表示</button>
+      <textarea class="json-input" id="promptDisplay" style="display:none; margin-top:10px;" readonly></textarea>
+      <div class="copy-success" id="copySuccess">✓ 上のプロンプトを全選択してコピーし、AIに貼り付けてください</div>
+    </div>
+
+    <!-- ステップ3: 結果入力 -->
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">3</span>
+        <span>AIの分析結果を貼り付け</span>
+      </div>
+      <div class="instruction">
+        問いかけてAIが返したJSON形式の結果をそのまま貼り付けてください。
+      </div>
+      <textarea class="json-input" id="jsonInput" placeholder='{
+  "structure": {"original": 60, "ai": 20, "citation": 20},
+  "sensation": {"original": 75, "ai": 10, "citation": 15},
+  "origin": {"original": 50, "ai": 15, "citation": 35}
+}'></textarea>
+      <button class="button secondary" onclick="visualize()">🎨 可視化する</button>
+      <div class="error-message" id="errorMessage"></div>
+    </div>
+  </div>
+
+  <!-- 結果表示セクション -->
+  <div class="container result-section" id="resultSection">
+    <svg id="triangleSvg" viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="original" cx="50%" cy="50%">
+          <stop offset="0%" style="stop-color:rgba(255,255,255,0.9)" />
+          <stop offset="100%" style="stop-color:rgba(240,240,240,0.5)" />
+        </radialGradient>
+      </defs>
+      
+      <!-- 三角形の枠 -->
+      <polygon points="60,15 15,95 105,95" 
+               fill="none" 
+               stroke="#95a5a6" 
+               stroke-width="0.8"
+               stroke-dasharray="2,2"/>
+      
+      <polygon points="60,15 15,95 105,95" 
+               fill="url(#original)" 
+               opacity="0.7"/>
+      
+      <!-- 頂点のラベル（シンプルに） -->
+      <text x="60" y="10" 
+            text-anchor="middle" 
+            font-size="5" 
+            font-weight="bold"
+            fill="#2c3e50">独創</text>
+      
+      <text x="15" y="100" 
+            text-anchor="middle" 
+            font-size="5" 
+            font-weight="bold"
+            fill="#2c3e50">AI対話</text>
+      
+      <text x="105" y="100" 
+            text-anchor="middle" 
+            font-size="5" 
+            font-weight="bold"
+            fill="#2c3e50">引用</text>
+      
+      <!-- ポインター1: 構造視点（薄赤） -->
+      <g class="breathing-dot" id="structureDot">
+        <circle id="structureMain" cx="55" cy="40" r="3" 
+                fill="rgba(231, 76, 60, 0.7)" 
+                opacity="0.9"/>
+        <circle id="structureOuter" cx="55" cy="40" r="5" 
+                fill="none" 
+                stroke="rgba(231, 76, 60, 0.7)" 
+                stroke-width="0.5" 
+                opacity="0.5"/>
+      </g>
+      
+      <!-- ポインター2: 感覚視点（薄群青） -->
+      <g class="breathing-dot" id="sensationDot" style="animation-delay: 1s;">
+        <circle id="sensationMain" cx="55" cy="40" r="3" 
+                fill="rgba(135, 169, 210, 0.7)" 
+                opacity="0.9"/>
+        <circle id="sensationOuter" cx="55" cy="40" r="5" 
+                fill="none" 
+                stroke="rgba(135, 169, 210, 0.7)" 
+                stroke-width="0.5" 
+                opacity="0.5"/>
+      </g>
+      
+      <!-- ポインター3: 出自視点（琥珀） -->
+      <g class="breathing-dot" id="originDot" style="animation-delay: 2s;">
+        <circle id="originMain" cx="55" cy="40" r="3" 
+                fill="rgba(218, 165, 32, 0.7)" 
+                opacity="0.9"/>
+        <circle id="originOuter" cx="55" cy="40" r="5" 
+                fill="none" 
+                stroke="rgba(218, 165, 32, 0.7)" 
+                stroke-width="0.5" 
+                opacity="0.5"/>
+      </g>
+    </svg>
+
+    <!-- 視点の凡例 -->
+    <div class="perspective-legend">
+      <div class="perspective-item">
+        <div class="perspective-dot" style="background: rgba(231, 76, 60, 0.7);"></div>
+        <span>①構造視点：説明性・整理度に着目</span>
+      </div>
+      <div class="perspective-item">
+        <div class="perspective-dot" style="background: rgba(135, 169, 210, 0.7);"></div>
+        <span>②感覚視点：余白・揺らぎに着目</span>
+      </div>
+      <div class="perspective-item">
+        <div class="perspective-dot" style="background: rgba(218, 165, 32, 0.7);"></div>
+        <span>③出自視点：どこから来たかに着目</span>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-text" style="font-weight: bold;">①構造視点</div>
+      </div>
+      <div class="legend-item" style="padding-left: 15px;">
+        <div class="legend-text">独創</div>
+        <div class="legend-percent" id="structureOriginal">--</div>
+      </div>
+      <div class="legend-item" style="padding-left: 15px;">
+        <div class="legend-text">AI対話</div>
+        <div class="legend-percent" id="structureAi">--</div>
+      </div>
+      <div class="legend-item" style="padding-left: 15px;">
+        <div class="legend-text">引用</div>
+        <div class="legend-percent" id="structureCitation">--</div>
+      </div>
+
+      <div class="legend-item" style="margin-top: 15px;">
+        <div class="legend-text" style="font-weight: bold;">②感覚視点</div>
+      </div>
+      <div class="legend-item" style="padding-left: 15px;">
+        <div class="legend-text">独創</div>
+        <div class="legend-percent" id="sensationOriginal">--</div>
+      </div>
+      <div class="legend-item" style="padding-left: 15px;">
+        <div class="legend-text">AI対話</div>
+        <div class="legend-percent" id="sensationAi">--</div>
+      </div>
+      <div class="legend-item" style="padding-left: 15px;">
+        <div class="legend-text">引用</div>
+        <div class="legend-percent" id="sensationCitation">--</div>
+      </div>
+
+      <div class="legend-item" style="margin-top: 15px;">
+        <div class="legend-text" style="font-weight: bold;">③出自視点</div>
+      </div>
+      <div class="legend-item" style="padding-left: 15px;">
+        <div class="legend-text">独創</div>
+        <div class="legend-percent" id="originOriginal">--</div>
+      </div>
+      <div class="legend-item" style="padding-left: 15px;">
+        <div class="legend-text">AI対話</div>
+        <div class="legend-percent" id="originAi">--</div>
+      </div>
+      <div class="legend-item" style="padding-left: 15px;">
+        <div class="legend-text">引用</div>
+        <div class="legend-percent" id="originCitation">--</div>
+      </div>
+    </div>
+
+    <div class="note" id="analysisNote">
+      <strong>📝 視点による解釈の違い</strong><br><br>
+      <span id="noteContent">分析結果がここに表示されます。</span>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px; padding: 20px; font-size: 0.85rem; color: #95a5a6; border-top: 1px solid #ecf0f1;">
+      SCV (Speculative Creation Visible)<br>
+      © 2026 のん（だれかのん）<br>
+      言葉の輪廻転生（サムラン）
+    </div>
+  </div>
+
+  <script>
+    function showPrompt() {
+      const text = document.getElementById('textInput').value.trim();
+      
+      if (!text) {
+        alert('まず文章を入力してください');
+        return;
+      }
+
+      const prompt = `以下の文章を分析して、3つの要素の割合を推定してください：
+
+1. 独創: 書き手のオリジナルな言葉や表現、独自の視点
+2. AI対話: AIとの対話や共創で整理・構造化された部分
+3. 引用: 既存の概念や先人の知恵の引用
+
+【分析①：構造視点】
+文章の構造や整理度、説明性に着目して割合を推定してください。
+
+【分析②：感覚視点】
+表現の余白や揺らぎ、個人の感覚に着目して割合を推定してください。
+
+【分析③：出自視点】
+この文章がどこから来たか（個人・対話・既存概念）に着目して割合を推定してください。
+
+それぞれの分析で、合計が100%になるように割合を提示してください。
+
+文章：
+${text}
+
+回答は以下のJSON形式のみで返してください（説明文や\`\`\`json\`\`\`などは含めず、JSONのみ）：
+{
+  "structure": {"original": 60, "ai": 20, "citation": 20},
+  "sensation": {"original": 75, "ai": 10, "citation": 15},
+  "origin": {"original": 50, "ai": 15, "citation": 35}
+}`;
+
+      // プロンプトを表示
+      const promptDisplay = document.getElementById('promptDisplay');
+      promptDisplay.value = prompt;
+      promptDisplay.style.display = 'block';
+      
+      // 成功メッセージを表示
+      const successMsg = document.getElementById('copySuccess');
+      successMsg.classList.add('show');
+      
+      // テキストエリアを選択状態にする
+      promptDisplay.select();
+      
+      // クリップボードにコピーも試みる
+      try {
+        navigator.clipboard.writeText(prompt).then(() => {
+          successMsg.textContent = '✓ コピーしました！AIに貼り付けてください';
+        }).catch(() => {});
+      } catch (err) {}
+    }
+
+    function visualize() {
+      const jsonText = document.getElementById('jsonInput').value.trim();
+      const errorMsg = document.getElementById('errorMessage');
+      
+      if (!jsonText) {
+        errorMsg.textContent = 'AIの分析結果を入力してください';
+        errorMsg.classList.add('show');
+        return;
+      }
+
+      try {
+        // JSONをクリーンアップ
+        let cleanJson = jsonText;
+        if (cleanJson.includes('```json')) {
+          cleanJson = cleanJson.replace(/```json\n?/g, '').replace(/```/g, '').trim();
+        } else if (cleanJson.includes('```')) {
+          cleanJson = cleanJson.replace(/```\n?/g, '').trim();
+        }
+        
+        const result = JSON.parse(cleanJson);
+        
+        // 必須フィールドのチェック
+        if (!result.structure || !result.sensation || !result.origin) {
+          throw new Error('必要なフィールドが不足しています');
+        }
+
+        // エラーメッセージを非表示
+        errorMsg.classList.remove('show');
+
+        // 結果を表示
+        updateVisualization(result);
+        
+        // 結果セクションを表示
+        document.getElementById('resultSection').classList.add('active');
+        
+        // 結果セクションまでスクロール
+        document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+
+      } catch (error) {
+        errorMsg.textContent = 'JSON形式が正しくありません。AIの結果をそのままコピー&ペーストしてください。';
+        errorMsg.classList.add('show');
+        console.error('Parse error:', error);
+      }
+    }
+
+    function calculatePosition(original, ai, citation) {
+      // 三角形の頂点: 独創(60,15), AI対話(15,95), 引用(105,95)
+      const top = { x: 60, y: 15 };
+      const left = { x: 15, y: 95 };
+      const right = { x: 105, y: 95 };
+
+      // 重心座標での位置計算
+      const x = (top.x * original + left.x * ai + right.x * citation) / 100;
+      const y = (top.y * original + left.y * ai + right.y * citation) / 100;
+      
+      return { x, y };
+    }
+
+    function updateVisualization(result) {
+      // 構造視点のポインター更新
+      const structurePos = calculatePosition(
+        result.structure.original,
+        result.structure.ai,
+        result.structure.citation
+      );
+      document.getElementById('structureMain').setAttribute('cx', structurePos.x);
+      document.getElementById('structureMain').setAttribute('cy', structurePos.y);
+      document.getElementById('structureOuter').setAttribute('cx', structurePos.x);
+      document.getElementById('structureOuter').setAttribute('cy', structurePos.y);
+
+      // 感覚視点のポインター更新
+      const sensationPos = calculatePosition(
+        result.sensation.original,
+        result.sensation.ai,
+        result.sensation.citation
+      );
+      document.getElementById('sensationMain').setAttribute('cx', sensationPos.x);
+      document.getElementById('sensationMain').setAttribute('cy', sensationPos.y);
+      document.getElementById('sensationOuter').setAttribute('cx', sensationPos.x);
+      document.getElementById('sensationOuter').setAttribute('cy', sensationPos.y);
+
+      // 出自視点のポインター更新
+      const originPos = calculatePosition(
+        result.origin.original,
+        result.origin.ai,
+        result.origin.citation
+      );
+      document.getElementById('originMain').setAttribute('cx', originPos.x);
+      document.getElementById('originMain').setAttribute('cy', originPos.y);
+      document.getElementById('originOuter').setAttribute('cx', originPos.x);
+      document.getElementById('originOuter').setAttribute('cy', originPos.y);
+
+      // パーセンテージを更新
+      document.getElementById('structureOriginal').textContent = `${result.structure.original}%`;
+      document.getElementById('structureAi').textContent = `${result.structure.ai}%`;
+      document.getElementById('structureCitation').textContent = `${result.structure.citation}%`;
+
+      document.getElementById('sensationOriginal').textContent = `${result.sensation.original}%`;
+      document.getElementById('sensationAi').textContent = `${result.sensation.ai}%`;
+      document.getElementById('sensationCitation').textContent = `${result.sensation.citation}%`;
+
+      document.getElementById('originOriginal').textContent = `${result.origin.original}%`;
+      document.getElementById('originAi').textContent = `${result.origin.ai}%`;
+      document.getElementById('originCitation').textContent = `${result.origin.citation}%`;
+
+      // 説明文を更新
+      const noteContent = `
+        構造で見れば整理された印象、感覚で見れば個人的な揺らぎ、出自で見れば引用の影響。<br><br>
+        
+        視点が変われば、同じ文章も違う「色」を帯びる。<br><br>
+        
+        このズレこそが、言葉の循環の証。
+      `;
+      document.getElementById('noteContent').innerHTML = noteContent;
+    }
+  </script>
+</body>
+</html>
